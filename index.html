@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICHRA Broker CRM — CA & HI Markets</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-primary:#ffffff;--bg-secondary:#f5f5f3;--bg-tertiary:#eeecea;
+  --text-primary:#1a1a1a;--text-secondary:#555;--text-tertiary:#888;
+  --border-light:rgba(0,0,0,0.1);--border-mid:rgba(0,0,0,0.18);
+  --blue-bg:#e6f1fb;--blue-text:#185fa5;--blue-border:#85b7eb;
+  --green-bg:#eaf3de;--green-text:#3b6d11;
+  --amber-bg:#faeeda;--amber-text:#854f0b;
+  --red-bg:#faece7;--red-text:#993c1d;
+  --purple-bg:#eeedfe;--purple-text:#3c3489;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 4px rgba(0,0,0,0.08);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-tertiary);color:var(--text-primary);font-size:14px;min-height:100vh}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:230px;min-width:230px;background:var(--bg-primary);border-right:1px solid var(--border-light);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border-light)}
+.sidebar-logo h1{font-size:14px;font-weight:600;color:var(--text-primary);letter-spacing:-.3px}
+.sidebar-logo p{font-size:11px;color:var(--text-tertiary);margin-top:3px}
+.nav-section{padding:14px 12px 4px;font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.08em;text-transform:uppercase}
+.nav-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;border-radius:var(--radius);color:var(--text-secondary);font-size:13px;text-align:left;transition:background .12s;margin-bottom:1px}
+.nav-btn:hover{background:var(--bg-secondary)}
+.nav-btn.active{background:var(--blue-bg);color:var(--blue-text);font-weight:600}
+.nav-btn .nav-icon{font-size:16px;width:20px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--bg-secondary);border-radius:10px;padding:1px 7px;font-size:11px;font-weight:500}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border-light);font-size:11px;color:var(--text-tertiary)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.topbar{background:var(--bg-primary);border-bottom:1px solid var(--border-light);padding:12px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;flex-wrap:wrap}
+.topbar h2{font-size:16px;font-weight:600;flex:1;min-width:80px}
+.content{padding:20px;flex:1}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border-mid);background:var(--bg-primary);cursor:pointer;font-size:13px;color:var(--text-primary);display:inline-flex;align-items:center;gap:6px;transition:background .12s;white-space:nowrap;font-family:inherit}
+.btn:hover{background:var(--bg-secondary)}
+.btn-primary{background:var(--blue-bg);color:var(--blue-text);border-color:var(--blue-border);font-weight:500}
+.btn-primary:hover{background:#d5e8f8}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-danger{background:#fcebeb;color:#a32d2d;border-color:#f09595}
+.btn-warning{background:var(--amber-bg);color:var(--amber-text);border-color:#ef9f27}
+.btn-success{background:var(--green-bg);color:var(--green-text);border-color:#97c459}
+
+/* INPUTS */
+input[type=text],input[type=email],input[type=date],select,textarea{
+  padding:8px 10px;border:1px solid var(--border-mid);border-radius:var(--radius);
+  background:var(--bg-primary);color:var(--text-primary);font-size:13px;font-family:inherit;
+  transition:border .12s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue-border)}
+textarea{resize:vertical;min-height:80px}
+.search-bar{width:210px}
+.filter-sel{width:auto}
+
+/* CARDS & TABLES */
+.stat-card{background:var(--bg-secondary);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border-light)}
+.stat-card .label{font-size:11px;color:var(--text-secondary);margin-bottom:5px;font-weight:500}
+.stat-card .value{font-size:24px;font-weight:600}
+.stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
+.broker-table{width:100%;border-collapse:collapse;background:var(--bg-primary);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-light);box-shadow:var(--shadow)}
+.broker-table th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:1px solid var(--border-light);background:var(--bg-secondary);white-space:nowrap;letter-spacing:.03em;text-transform:uppercase}
+.broker-table td{padding:9px 12px;border-bottom:1px solid var(--border-light);font-size:13px;vertical-align:middle}
+.broker-table tr:last-child td{border-bottom:none}
+.broker-table tr.clickable:hover td{background:var(--bg-secondary);cursor:pointer}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid transparent}
+.badge-hot{background:var(--red-bg);color:var(--red-text)}
+.badge-warm{background:var(--amber-bg);color:var(--amber-text)}
+.badge-good{background:var(--green-bg);color:var(--green-text)}
+.badge-cold{background:var(--blue-bg);color:var(--blue-text)}
+
+/* AVATAR */
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0}
+.avatar-lg{width:48px;height:48px;font-size:17px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;overflow-y:auto}
+.modal{background:var(--bg-primary);border-radius:var(--radius-lg);width:100%;max-width:740px;border:1px solid var(--border-light);box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:15px;font-weight:600}
+.modal-body{padding:22px;max-height:70vh;overflow-y:auto}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border-light);display:flex;gap:8px;justify-content:flex-end;background:var(--bg-secondary);border-radius:0 0 var(--radius-lg) var(--radius-lg)}
+
+/* FORM GRID */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;color:var(--text-secondary);font-weight:600;letter-spacing:.02em}
+.form-group input,.form-group select,.form-group textarea{width:100%}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border-light);margin-bottom:18px}
+.tab-btn{padding:9px 18px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;font-weight:500;transition:color .12s}
+.tab-btn:hover{color:var(--text-primary)}
+.tab-btn.active{color:var(--blue-text);border-bottom-color:var(--blue-text);font-weight:600}
+
+/* ACTIVITY TIMELINE */
+.timeline{border-left:2px solid var(--border-light);padding-left:18px;margin-left:10px}
+.t-item{margin-bottom:16px;position:relative}
+.t-dot{width:10px;height:10px;border-radius:50%;background:var(--blue-text);position:absolute;left:-24px;top:4px}
+.t-meta{font-size:11px;color:var(--text-tertiary);margin-bottom:3px;font-weight:500}
+.t-body{font-size:13px;line-height:1.6;color:var(--text-primary)}
+
+/* MISC */
+.divider{height:1px;background:var(--border-light);margin:18px 0}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-header h3{font-size:14px;font-weight:600}
+.empty{text-align:center;padding:50px 20px;color:var(--text-tertiary)}
+.empty .icon{font-size:40px;margin-bottom:10px}
+.priority-banner{background:#fffbf0;border:1px solid #f0c678;border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:18px}
+.priority-banner h4{font-size:13px;font-weight:600;color:#854f0b;margin-bottom:8px}
+.priority-chips{display:flex;gap:8px;flex-wrap:wrap}
+.priority-chip{background:var(--bg-primary);border:1px solid #f0c678;border-radius:20px;padding:4px 14px;font-size:12px;cursor:pointer;color:var(--text-primary);font-weight:500;transition:background .12s}
+.priority-chip:hover{background:var(--bg-secondary)}
+.contact-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.info-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius);border:1px solid var(--border-light)}
+.info-item .icon{font-size:18px;flex-shrink:0}
+.info-item .detail{font-size:11px;color:var(--text-tertiary);margin-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.info-item .val{font-size:13px;color:var(--text-primary);word-break:break-all}
+.info-item a{color:var(--blue-text);text-decoration:none}
+.support-chip{background:var(--purple-bg);color:var(--purple-text);border-radius:var(--radius);padding:5px 12px;font-size:12px;font-weight:500;display:inline-block;margin:3px}
+.email-card{border:1px solid var(--border-light);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;background:var(--bg-primary)}
+.email-card .subject{font-size:13px;font-weight:600;margin-bottom:3px}
+.email-card .meta{font-size:11px;color:var(--text-tertiary);margin-bottom:6px}
+.email-card .preview{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.camp-row{background:var(--bg-primary);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow)}
+.camp-row h4{font-size:13px;font-weight:600}
+.camp-row p{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.reengage-card{background:var(--bg-primary);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow)}
+.pagination{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:flex-end}
+.status-pills{display:flex;gap:6px;flex-wrap:wrap}
+.status-pill{padding:6px 14px;border-radius:20px;border:1px solid var(--border-mid);cursor:pointer;font-size:12px;font-weight:600;background:none;color:var(--text-secondary);font-family:inherit;transition:all .12s}
+.status-pill.sel-hot{background:var(--red-bg);color:var(--red-text);border-color:#f0997b}
+.status-pill.sel-warm{background:var(--amber-bg);color:var(--amber-text);border-color:#ef9f27}
+.status-pill.sel-good{background:var(--green-bg);color:var(--green-text);border-color:#97c459}
+.status-pill.sel-cold{background:var(--blue-bg);color:var(--blue-text);border-color:var(--blue-border)}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:var(--radius);font-size:13px;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+const STORAGE_KEY='ichra_crm_standalone_v1';
+const SEED_KEY='ichra_seeded_v1';
+
+const SEED=[{"id":5,"name":"Jeff Slay","title":"Benefits Broker","agency":"Alera Group | Oxnard","email":"jeffrey.slay@aleragroup.com","mobile":"805-453-8605","direct":"805-220-1409","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-03-20","support":[],"notes":"3/20: TJ sent lead to run RFP. 3/27: Quote sent to broker team (Jeff, David & Justin).","logs":[{"id":500,"type":"note","date":"2026-03-20","text":"Opportunity: Frazier Aviation 6/1. 3/20: TJ sent lead to run RFP. 3/27: Quote sent to broker team.","by":"You"}],"emails":[],"followUp":"","meetings":[{"date":"","note":"Frazier Aviation 6/1 RFP"}]},{"id":6,"name":"David Penner","title":"Benefits Broker","agency":"Alera Group | Oxnard","email":"David.Penner@aleragroup.com","mobile":"","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-03-27","support":[],"notes":"Partnering w/ Jeff Slay on Frazier Aviation RFP.","logs":[{"id":600,"type":"note","date":"2026-03-27","text":"Partnering w/ Jeff Slay. Opportunity: Frazier Aviation 6/1.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":7,"name":"Justin Veyna","title":"Benefits Broker","agency":"Alera Group | Oxnard","email":"Justin.Veyna@aleragroup.com","mobile":"","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-03-27","support":[],"notes":"Partnering w/ Jeff Slay on Frazier Aviation RFP.","logs":[{"id":700,"type":"note","date":"2026-03-27","text":"Partnering w/ Jeff Slay. Opportunity: Frazier Aviation 6/1.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":8,"name":"Joey Martin","title":"Benefits Broker","agency":"MMA | Aliso Viejo","email":"joey.martin@marshamma.com","mobile":"714-587-1826","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-03-31","support":[],"notes":"3/31: Called made contact. Still interested in ICHRA, no opps at this time. (Prev. Venteur demo) - RH e/m sent.","logs":[{"id":800,"type":"call","date":"2026-03-31","text":"Called, made contact. Still interested in ICHRA, no opps at this time. Previous Venteur demo. RH e/m sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":9,"name":"Jeff Kane","title":"Benefits Broker","agency":"KBK Insurance | Watsonville","email":"Jeff@kbkinsurance.com","mobile":"831-763-7088","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-03-31","support":[],"notes":"3/31: Intro zoom done. Interested in partnering. Current BOB: Restaurants and architects. RA 9 - San Jose County. Client Zips 95060 / Santa Cruz CA. 5/29: nuture email sent.","logs":[{"id":900,"type":"meeting","date":"2026-03-31","text":"Intro zoom done. Interested in partnering. BOB: Restaurants and architects. RA 9 San Jose County.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":10,"name":"Blane Bachan","title":"Benefits Broker","agency":"The Bachan Group","email":"bbachan@bachangroup.com","mobile":"831-252-6850","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-03-27","support":[],"notes":"3/27: Zoom done w/ K&D Landscape (not a good fit)","logs":[{"id":1000,"type":"meeting","date":"2026-03-27","text":"Zoom done w/ K&D Landscape (not a good fit)","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":11,"name":"Adam Singer","title":"Benefits Broker","agency":"AON | San Francisco","email":"adam.singer@aon.com","mobile":"415-910-2646","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-03-23","support":[{"name":"Tomi Oginni","role":"Account Manager"}],"notes":"3/23: Contact made w/ Adam, no opps at this time.","logs":[{"id":1100,"type":"call","date":"2026-03-23","text":"Contact made. No opps at this time.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":13,"name":"Abner Aponte","title":"Benefits Broker","agency":"Acrisure - Southwest","email":"AbAponte@acrisure.com","mobile":"949-439-9045","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-03-20","support":[],"notes":"5/29: Nuture Q4 email sent. 5/4: Abner wants to set ICHRA 101 learning. 3/20: Inbound from Abner for one of his groups.","logs":[{"id":1300,"type":"note","date":"2026-03-20","text":"Opportunity: Stellar Senior Housing Experts. 3/20: Inbound from Abner for one of his groups.","by":"You"},{"id":1301,"type":"note","date":"2026-05-04","text":"5/4: Abner wants to set ICHRA 101 learning Bcc: Sarah for visibility.","by":"You"},{"id":1302,"type":"email","date":"2026-05-29","text":"Q4 nuture email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":14,"name":"Peter Evans","title":"Benefits Broker","agency":"Peter Evans Insurance Services","email":"mrpaevans@gmail.com","mobile":"951-541-8542","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-01","support":[],"notes":"4/7: Proposal sent to Pete. Opp: 6/1 Reliance Church.","logs":[{"id":1400,"type":"note","date":"2026-04-01","text":"Opportunity: 6/1 Reliance Church.","by":"You"},{"id":1401,"type":"note","date":"2026-04-07","text":"Proposal sent to Pete.","by":"You"}],"emails":[],"followUp":"","meetings":[{"date":"","note":"Reliance Church 6/1 Proposal"}]},{"id":15,"name":"Bijan Noori","title":"Benefits Broker","agency":"BRNC Insurance Services | Irvine","email":"bijan@brncinsurance.com","mobile":"949-227-2050","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-01","support":[],"notes":"4/1: Broker gave personal note on linkedin. e/m sent w/ RH info.","logs":[{"id":1500,"type":"note","date":"2026-04-01","text":"Broker gave personal note on linkedin comment. e/m sent w/ RH info.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":16,"name":"Tamara Fleming","title":"Benefits Broker","agency":"Intrepid Benefits | Newport Beach CA","email":"tfleming@intrepidbenefits.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/20: intro outreach","logs":[{"id":1600,"type":"note","date":"2026-04-20","text":"Intro outreach to Dan and team at Intrepid.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":17,"name":"Spencer Heit","title":"Benefits Broker","agency":"BTS Ins. / Oak and Mercer Benefits","email":"spencer@oakandmercerbenefits.com","mobile":"206-696-8815","direct":"","address":"","linkedin":"","status":"warm","state":"OH","startDate":"2026-04-02","support":[],"notes":"4/2: Spencer called inbound for SMBs 2-3 lives. Was Venteur client. Interested to place 10+ w/ us. Ref: Ali Berg","logs":[{"id":1700,"type":"call","date":"2026-04-02","text":"Spencer called inbound for SMBs 2-3 lives. Was Venteur client, interested to place 10+ w/ us. Ref: Ali Berg.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":18,"name":"Ruben Baeza","title":"Benefits Broker","agency":"Colonial / Irvine","email":"ruben.rodriguezbaeza@coloniallifesales.com","mobile":"657-315-0984","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-02","support":[{"name":"Crystal Henriquez","role":"Team Member"},{"name":"Brianne Napier","role":"Team Member"}],"notes":"4/2: DMs on linkedin, scheduled education call for 4/8 @ 10:30am. 5/29: nuture Q4 email sent.","logs":[{"id":1800,"type":"meeting","date":"2026-04-08","text":"Education call / zoom. Crystal Henriquez and Brianne Napier also attended.","by":"You"},{"id":1801,"type":"email","date":"2026-05-29","text":"Q4 nuture email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":19,"name":"Crystal Henriquez","title":"Benefits Broker","agency":"Colonial / Irvine","email":"Crystal.Henriquez@coloniallifesales.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-08","support":[],"notes":"4/8: attended zoom, works w/ Ruben B.","logs":[{"id":1900,"type":"meeting","date":"2026-04-08","text":"Attended zoom with Ruben Baeza team.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":20,"name":"Brianne Napier","title":"Benefits Broker","agency":"Colonial / Irvine","email":"Brianne.Napier@coloniallifesales.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-08","support":[],"notes":"4/8: attended zoom, works w/ Ruben B.","logs":[{"id":2000,"type":"meeting","date":"2026-04-08","text":"Attended zoom with Ruben Baeza team.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":21,"name":"Chris Peters","title":"Benefits Broker","agency":"DiBuduo & DeFendis Insurance Brokers LLC","email":"chris.peters@dibu.com","mobile":"559-779-7171","direct":"559-437-6742","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"4/6: Shadowed Alexis in zoom for proposal review. e/m from chris on proposal assumptions.","logs":[{"id":2100,"type":"meeting","date":"2026-04-06","text":"Shadowed Alexis in zoom for proposal review.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":22,"name":"Brooks Speake","title":"Benefits Broker","agency":"Speake Insurance","email":"brooks@speakeinsurance.com","mobile":"951-415-7179","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-06","support":[{"name":"Toby Speake","role":"Partner"}],"notes":"4/6: Contact made. 4/17: Lunch meeting - WIN!!! 5/5: Follow up on census for group RFP. Opp: Olive Branch Comm Church.","logs":[{"id":2200,"type":"call","date":"2026-04-06","text":"Contact made, looking to partner.","by":"You"},{"id":2201,"type":"meeting","date":"2026-04-17","text":"Lunch meeting w/ Brokers & Toby - Partnership WIN!!!","by":"You"},{"id":2202,"type":"call","date":"2026-05-05","text":"Follow up on census for Olive Branch Comm Church group RFP.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":23,"name":"Toby Speake","title":"Benefits Broker","agency":"Speake Insurance","email":"toby@speakeinsurance.com","mobile":"951-415-7179","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-17","support":[],"notes":"4/17: Partnership WIN! Has several accounts.","logs":[{"id":2300,"type":"meeting","date":"2026-04-17","text":"Lunch meeting - Partnership WIN! Has several accounts.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":24,"name":"Brandi Potlongo","title":"Benefits Broker","agency":"BPMH Insurance","email":"brandi@bpmhinsurance.com","mobile":"714-657-6829","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"4/6: e/m sent, LVM.","logs":[{"id":2400,"type":"call","date":"2026-04-06","text":"e/m sent, LVM.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":25,"name":"Yuet Yong","title":"Benefits Broker","agency":"Colony West Insurance","email":"yuet@colony-west.com","mobile":"818-619-7186","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"Previous Venteur broker.","logs":[{"id":2500,"type":"note","date":"2026-04-06","text":"Previous Venteur broker. Contact made.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":26,"name":"Stephanie Torrez","title":"Benefits Broker","agency":"Saint Moore Insurance / OC","email":"","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"Previous Venteur/Amwins broker.","logs":[{"id":2600,"type":"note","date":"2026-04-06","text":"Previous Venteur/Amwins broker.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":27,"name":"Austin Edmonds","title":"Benefits Broker","agency":"Edmonds Insurance Benefits","email":"austin@edmondsinsurancebenfits.com","mobile":"310-568-4522","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"4/6: e/m RH intro sent.","logs":[{"id":2700,"type":"email","date":"2026-04-06","text":"e/m RH intro sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":28,"name":"Eric Calciano","title":"Benefits Broker","agency":"New City Insurance / San Diego","email":"eric@newcityinsurance.com","mobile":"","direct":"888-210-2765","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"Previous Venteur broker.","logs":[{"id":2800,"type":"note","date":"2026-04-06","text":"Previous Venteur broker. e/m RH outreach.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":29,"name":"Nick Rebis","title":"Benefits Broker","agency":"New City Insurance / San Diego","email":"nick@newcityinsurance.com","mobile":"619-623-5018","direct":"888-210-2765","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"Previous Venteur broker. 4/8: Scheduled zoom 4/16 to reconnect.","logs":[{"id":2900,"type":"meeting","date":"2026-04-16","text":"Zoom to reconnect. Previous Venteur broker.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":30,"name":"Matthew Moffitt","title":"Benefits Broker","agency":"Alliant Insurance / OC","email":"matthewcmoffitt@gmail.com","mobile":"909-455-4601","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-06","support":[],"notes":"Previous Venteur broker.","logs":[{"id":3000,"type":"email","date":"2026-04-06","text":"e/m outreach. Previous Venteur broker.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":31,"name":"Dan Tempelton","title":"Benefits Broker","agency":"Intrepid Benefits | Newport Beach CA","email":"dtemplin@intrepidbenefits.com","mobile":"","direct":"866-222-9571","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[{"name":"Tamara Fleming","role":"Team Member"},{"name":"Jannah Arnold","role":"Team Member"},{"name":"Laura Bryant","role":"Team Member"}],"notes":"4/20: intro outreach","logs":[{"id":3100,"type":"email","date":"2026-04-20","text":"Intro outreach to Dan and team.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":32,"name":"Jannah Arnold","title":"Benefits Broker","agency":"Intrepid Benefits | Newport Beach CA","email":"jarnold@intrepidbenefits.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"Part of Intrepid Benefits team with Dan Tempelton.","logs":[{"id":3200,"type":"email","date":"2026-04-20","text":"Intro outreach.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":33,"name":"Laura Bryant","title":"Benefits Broker","agency":"Intrepid Benefits | Newport Beach CA","email":"lbryant@intrepidbenefits.com","mobile":"","direct":"949-694-1902","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"Part of Intrepid Benefits team with Dan Tempelton.","logs":[{"id":3300,"type":"email","date":"2026-04-20","text":"Intro outreach.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":34,"name":"Michelle Santillan","title":"Benefits Broker","agency":"Heffern Insurance / Woodland Hills","email":"michellesa@heffins.com","mobile":"213-431-6671","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-08","support":[],"notes":"4/8: LVM RH intro. LG opps - she was promoted.","logs":[{"id":3400,"type":"call","date":"2026-04-08","text":"LVM RH intro. Note: LG opps, she was promoted.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":35,"name":"Angela Ho","title":"Benefits Broker","agency":"MMA | Los Angeles","email":"Angela.Ho@MarshMMA.com","mobile":"310-710-3409","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-09","support":[],"notes":"4/9: Zoom done - very interested. 4/17: RFP sent to Sales Ops. 5/5: Follow up, rolled to 8/1. Opp: Exclusive Wireless (I2I Thatch).","logs":[{"id":3500,"type":"meeting","date":"2026-04-09","text":"Zoom completed - Angela is very interested.","by":"You"},{"id":3501,"type":"note","date":"2026-04-17","text":"RFP sent to Sales Ops for rework. Opp: Exclusive Wireless (I2I Thatch).","by":"You"},{"id":3502,"type":"call","date":"2026-05-05","text":"Follow up - rolled to 8/1.","by":"You"}],"emails":[],"followUp":"2026-08-01","meetings":[]},{"id":36,"name":"John Homan","title":"Benefits Broker","agency":"NFP an AON Company / Pleasant Hill","email":"jhohman@nfp.com","mobile":"925-286-8009","direct":"925-297-6147","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-09","support":[{"name":"Kathy Ruiz","role":"Team Member"},{"name":"Michelle Ribeiro","role":"Team Member"}],"notes":"4/8: Kathy Ruiz reached out for 260+ group RFP - Bay Medical Management. Proposal sent 4/9. 5/5: RFP Proposal Zoom set.","logs":[{"id":3600,"type":"note","date":"2026-04-08","text":"Kathy Ruiz reached out for RFP - Bay Medical Management (260+ group).","by":"You"},{"id":3601,"type":"note","date":"2026-04-09","text":"Proposal sent.","by":"You"},{"id":3602,"type":"meeting","date":"2026-05-05","text":"RFP Proposal Zoom set.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":37,"name":"Tony Cruz","title":"Benefits Broker","agency":"Brown & Brown","email":"tony.cruz@bbrown.com","mobile":"925-520-5921","direct":"707-237-5826","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-16","support":[],"notes":"4/28: Rescheduled zoom - had mandatory agency meeting.","logs":[{"id":3700,"type":"meeting","date":"2026-04-28","text":"Rescheduled zoom. Had a mandatory agency meeting.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":38,"name":"Donnie Browne","title":"Benefits Broker","agency":"Browne Insurance","email":"donnie@browneinsurance.com","mobile":"650-703-7044","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-16","support":[],"notes":"Outbound interested.","logs":[{"id":3800,"type":"note","date":"2026-04-16","text":"Outbound interested.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":39,"name":"Harry Redoglia","title":"Benefits Broker","agency":"Gallagher","email":"harrison_redoglia@ajg.com","mobile":"858-692-6655","direct":"858-523-7558","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-11","support":[],"notes":"Inbound email from broker.","logs":[{"id":3900,"type":"email","date":"2026-04-11","text":"Inbound email from broker.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":40,"name":"Matt Dike","title":"Benefits Broker","agency":"FIT Planning Group","email":"matthew@fitplanninggroup.com","mobile":"714-357-3362","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-16","support":[],"notes":"Sent MLC RFP info for Matt to collect. Opp: 6/1 Noglas.","logs":[{"id":4000,"type":"note","date":"2026-04-16","text":"Sent MLC RFP info for Matt to collect. Opportunity: 6/1 Noglas.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":41,"name":"Mike Houston","title":"Benefits Broker","agency":"Mike Houston Insurance","email":"mhouston24@gmail.com","mobile":"707-228-5376","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/21: Zoom call, interested in partnering.","logs":[{"id":4100,"type":"meeting","date":"2026-04-21","text":"Zoom call - interested in partnering.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":42,"name":"Lisa Prentice","title":"Benefits Broker","agency":"Ind. Broker","email":"smileyandjj@gmail.com","mobile":"949-698-0818","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"Intro new rep outreach / rep transfer.","logs":[{"id":4200,"type":"note","date":"2026-04-20","text":"Intro new rep outreach / rep transfer.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":43,"name":"Jessica Hinkle","title":"Benefits Broker","agency":"Alera Group CA","email":"jessica.hinkle@aleragroup.com","mobile":"","direct":"916-631-7887","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"Intro new rep outreach / rep transfer.","logs":[{"id":4300,"type":"note","date":"2026-04-20","text":"Intro new rep outreach / rep transfer.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":44,"name":"David Wiesner","title":"Benefits Broker","agency":"EPIC Brokers CA","email":"david.wiesner@epicbrokers.com","mobile":"","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/20: RFP requested. 5/1: Zoom scheduled @ 2:00pm. Opp: 8/1 BAK Festivals Inc (not a good fit).","logs":[{"id":4400,"type":"note","date":"2026-04-20","text":"RFP requested.","by":"You"},{"id":4401,"type":"meeting","date":"2026-05-01","text":"Zoom Meeting @ 2:00pm.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":45,"name":"Michael Bernardini","title":"Benefits Broker","agency":"Bernardini & Donovan Health Insurance Services","email":"michael@bdhealthinsurance.com","mobile":"","direct":"909-225-2423","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[{"name":"Nancy DeLima","role":"Team Member"},{"name":"Adrian Donovan","role":"Team Member"},{"name":"Iris Gaytan","role":"Team Member"},{"name":"Cory Manning","role":"Team Member"}],"notes":"4/20: benefit flow. Start with Nancy DeLima first.","logs":[{"id":4500,"type":"note","date":"2026-04-20","text":"Benefit flow. Start with Nancy DeLima first, sent email intro.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":46,"name":"Adrian Donovan","title":"Benefits Broker","agency":"Bernardini & Donovan Health Insurance Services","email":"adrian@bdhealthinsurance.com","mobile":"877-251-2447","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: DM'd SalesNav reconnect msg.","logs":[{"id":4600,"type":"note","date":"2026-05-06","text":"DM'd SalesNav reconnect msg.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":47,"name":"Nancy DeLima","title":"Benefits Broker","agency":"Bernardini & Donovan Health Insurance Services","email":"nancy@bdhealthinsurance.com","mobile":"","direct":"909-227-8712","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/20: Benefit flow, start with Nancy first, sent email intro.","logs":[{"id":4700,"type":"email","date":"2026-04-20","text":"Benefit flow intro email sent. First contact at B&D.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":48,"name":"Iris Gaytan","title":"Benefits Broker","agency":"Bernardini & Donovan Health Insurance Services","email":"iris@bdhealthinsurance.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"","support":[],"notes":"B&D team member.","logs":[],"emails":[],"followUp":"","meetings":[]},{"id":49,"name":"Cory Manning","title":"Benefits Broker","agency":"Bernardini & Donovan Health Insurance Services","email":"cory@bdhealthinsurance.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"","support":[],"notes":"B&D team member.","logs":[],"emails":[],"followUp":"","meetings":[]},{"id":50,"name":"Jessica Schulte Walker","title":"Benefits Broker","agency":"Schulte Insurance Agency | Encinitas CA","email":"jessica@schulteinsurance.com","mobile":"760-492-7186","direct":"760-436-5015","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/20: Cold outreach email sent.","logs":[{"id":5000,"type":"email","date":"2026-04-20","text":"Cold outreach email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":51,"name":"Matthew Schulte","title":"Benefits Broker","agency":"Schulte Insurance Agency","email":"matthew@schulteinsurance.com","mobile":"","direct":"760-492-7185","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/20: Cold outreach email sent.","logs":[{"id":5100,"type":"email","date":"2026-04-20","text":"Cold outreach email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":52,"name":"Benjamin Losin","title":"Benefits Broker","agency":"Schulte Insurance Agency","email":"ben@schulteinsurance.com","mobile":"","direct":"760-436-1186","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/20: Cold outreach email sent.","logs":[{"id":5200,"type":"email","date":"2026-04-20","text":"Cold outreach email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":53,"name":"Hannah Mattison","title":"Benefits Broker","agency":"Schulte Insurance Agency","email":"hannah@schulteinsurance.com","mobile":"","direct":"760-257-6311","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-20","support":[],"notes":"4/20: Cold outreach email sent.","logs":[{"id":5300,"type":"email","date":"2026-04-20","text":"Cold outreach email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":54,"name":"Cameron Ghazzagh","title":"Benefits Broker","agency":"CalNonprofits Insurance Services","email":"cameron@cal-insurance.org","mobile":"415-312-3227","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-21","support":[],"notes":"4/27: Call - interested in ICHRA, wants Broker ICHRA 101 training. 5/6: DM'd on LinkedIn. 5/29: Q4 nuture email sent.","logs":[{"id":5400,"type":"call","date":"2026-04-27","text":"Call w/ Cameron - interested in ICHRA and would like a Broker ICHRA 101 training.","by":"You"},{"id":5401,"type":"note","date":"2026-05-06","text":"Follow up on ICHRA 101 - DM'd on LinkedIn.","by":"You"},{"id":5402,"type":"email","date":"2026-05-29","text":"Q4 nuture email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":55,"name":"Michael Runkle","title":"Benefits Broker","agency":"Alkeme Insurance | Ladera Ranch","email":"","mobile":"","direct":"949-297-4900","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-23","support":[],"notes":"4/23: Outreach on LinkedIn.","logs":[{"id":5500,"type":"note","date":"2026-04-23","text":"Outreach on LinkedIn.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":56,"name":"Ryan Lucht","title":"Benefits Broker","agency":"Churchwest Insurance","email":"ryan@churchwest.com","mobile":"","direct":"800-843-6054","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-27","support":[],"notes":"4/27: RFP request. 5/5: RFP rcvd, emailed to set zoom. 5/8: Zoom @9:30am. Opp: Redding Christian School 8/1.","logs":[{"id":5600,"type":"note","date":"2026-04-27","text":"RFP request received. Opportunity: Redding Christian School 8/1.","by":"You"},{"id":5601,"type":"email","date":"2026-05-05","text":"RFP received, emailed broker to set a zoom.","by":"You"},{"id":5602,"type":"meeting","date":"2026-05-08","text":"Zoom scheduled @9:30am.","by":"You"}],"emails":[],"followUp":"","meetings":[{"date":"2026-08-01","note":"Redding Christian School RFP"}]},{"id":57,"name":"Oles Skakalskyi","title":"Benefits Broker","agency":"Gallagher / San Diego","email":"oles_skakalskyi@ajg.com","mobile":"858-944-9532","direct":"858-200-3372","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-30","support":[],"notes":"4/30: BD - John outreached w/ interest.","logs":[{"id":5700,"type":"note","date":"2026-04-30","text":"BD - John outreached with interest.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":58,"name":"Ginger Jonas","title":"Benefits Broker","agency":"USI / CA","email":"ginger.jonas@usi.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-04-30","support":[],"notes":"4/30: Zoom set 5/18 @ 11am.","logs":[{"id":5800,"type":"meeting","date":"2026-05-18","text":"Zoom @ 11am.","by":"You"}],"emails":[],"followUp":"","meetings":[{"date":"2026-05-18","note":"Zoom @ 11am"}]},{"id":59,"name":"John Young","title":"Benefits Broker","agency":"Serra Benefits & Insurance","email":"jyoung@serrabenefits.com","mobile":"","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-04-30","support":[],"notes":"5/1: Zoom call set @ 3:30pm.","logs":[{"id":5900,"type":"meeting","date":"2026-05-01","text":"Zoom call @ 3:30pm.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":60,"name":"Lambert Hsu","title":"Benefits Broker","agency":"Proco Insurance Services / Acrisure","email":"lambert@benefitpro.com","mobile":"619-277-5262","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-04","support":[],"notes":"VM left.","logs":[{"id":6000,"type":"call","date":"2026-05-04","text":"VM left.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":61,"name":"Adrian Aponte","title":"Benefits Broker","agency":"Acrisure - Southwest","email":"aaponte@acrisure.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-04","support":[],"notes":"EM only. Dad is Abner Aponte.","logs":[{"id":6100,"type":"email","date":"2026-05-04","text":"EM only sent. (Son of Abner Aponte)","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":62,"name":"Ed Lee","title":"Benefits Broker","agency":"Acrisure","email":"edlee@acrisure.com","mobile":"619-857-3533","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-04","support":[],"notes":"Could not leave VM, only EM sent.","logs":[{"id":6200,"type":"email","date":"2026-05-04","text":"Could not leave VM, only email sent to Ed.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":63,"name":"Chanchal Thapar","title":"Benefits Broker","agency":"Independent Broker","email":"chanchaltha@hotmail.com","mobile":"909-374-8466","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-05-04","support":[],"notes":"Contacted briefly, she was sick. Would like to meet for LnL in July 2026.","logs":[{"id":6300,"type":"call","date":"2026-05-04","text":"Contacted briefly - she was sick. Wants to meet for a LnL in July 2026.","by":"You"}],"emails":[],"followUp":"2026-07-01","meetings":[{"date":"2026-07-01","note":"Lunch & Learn - TBD"}]},{"id":64,"name":"Chris Napoli","title":"Benefits Broker","agency":"HUB / San Diego","email":"napolic.1994@gmail.com","mobile":"201-694-0183","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: DM'd LinkedIn. New to HUB but familiar with ICHRA.","logs":[{"id":6400,"type":"note","date":"2026-05-06","text":"DM'd LinkedIn. Chris reacted - new to HUB but familiar with ICHRA.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":65,"name":"Hillary Geiger-Schmeel","title":"Benefits Broker","agency":"Buzzuto Insurance Services / NorCal","email":"hillaryschmeel@gmail.com","mobile":"530-635-3260","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach on LinkedIn, DM'd broker.","logs":[{"id":6500,"type":"note","date":"2026-05-06","text":"Cold outreach on LinkedIn, DM'd broker.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":66,"name":"Deric Fernandez","title":"Benefits Broker","agency":"BenefitsPro / San Diego","email":"deric@benefitpro.com","mobile":"619-294-7800","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach on LinkedIn, DM'd broker.","logs":[{"id":6600,"type":"note","date":"2026-05-06","text":"Cold outreach on LinkedIn, DM'd broker.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":67,"name":"Stephanie Flores","title":"Benefits Broker","agency":"MST Insurance","email":"steph.baru@gmail.com","mobile":"310-486-3731","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach on LinkedIn. Might have worked w/ at Maniaci Ins before?","logs":[{"id":6700,"type":"note","date":"2026-05-06","text":"Cold outreach on LinkedIn. Might have worked w/ at Maniaci Ins before?","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":68,"name":"Carlos A. Meza","title":"Benefits Broker","agency":"Brown & Brown / El Segundo","email":"mezasales@gmail.com","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach SalesNav, connect req.","logs":[{"id":6800,"type":"note","date":"2026-05-06","text":"Cold outreach SalesNav, connect request sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":69,"name":"Brad Fleiss","title":"Benefits Broker","agency":"USI Insurance Services / Los Angeles","email":"","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach SalesNav, connect req.","logs":[{"id":6900,"type":"note","date":"2026-05-06","text":"Cold outreach SalesNav, connect request sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":70,"name":"Joel Pearson","title":"Benefits Broker","agency":"Canopy HR","email":"","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach SalesNav. Used to run quotes at Amwins when he was w/ Vensure HR.","logs":[{"id":7000,"type":"note","date":"2026-05-06","text":"Cold outreach SalesNav. Previously ran quotes at Amwins when w/ Vensure HR.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":71,"name":"Nick Hamilton","title":"Benefits Broker","agency":"Crestin Employer Benefits","email":"nickghamilton@comcast.net","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach SalesNav reconnect. Partnered with Nick when he was at UHC for SG.","logs":[{"id":7100,"type":"note","date":"2026-05-06","text":"Cold outreach SalesNav reconnect. Partnered together when Nick was at UHC for SG.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":72,"name":"Ken Barclay","title":"Benefits Broker","agency":"USI Insurance Services / San Diego","email":"ken.barclay@usi.com","mobile":"323-646-4828","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-06","support":[],"notes":"5/6: Cold outreach SalesNav reconnect. Currently a connect on LinkedIn.","logs":[{"id":7200,"type":"note","date":"2026-05-06","text":"Cold outreach SalesNav reconnect. Currently a LinkedIn connect.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":73,"name":"Steve Siino","title":"Benefits Broker","agency":"USI Insurance Services / San Francisco","email":"","mobile":"","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-07","support":[],"notes":"5/7: Cold outreach LinkedIn.","logs":[{"id":7300,"type":"note","date":"2026-05-07","text":"Cold outreach LinkedIn.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":74,"name":"Patrick Casinelli","title":"Principal","agency":"Cavignac Associates / San Diego","email":"pcasinelli@cavugnac.com","mobile":"619-744-0563","direct":"619-234-6848","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-07","support":[],"notes":"5/7: Cold outreach LinkedIn. Agency has 3 offices: OC, North County SD, San Diego. Working w/ Matt Noonan Principal.","logs":[{"id":7400,"type":"note","date":"2026-05-07","text":"Cold outreach LinkedIn. Found via agency website. Working w/ Matt Noonan.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":75,"name":"Judy Fassbinder","title":"Benefits Broker","agency":"KDVR Insurance Services / El Segundo","email":"judy@wekovr.com","mobile":"213-616-9524","direct":"888-929-5687","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-05-07","support":[],"notes":"Referral from Karen DeLeon @ Amwins.","logs":[{"id":7500,"type":"note","date":"2026-05-07","text":"Referral from Karen DeLeon @ Amwins.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":76,"name":"Ronda Mottl","title":"Benefits Broker","agency":"RAM Insurance Services","email":"ronda@raminsurd.com","mobile":"949-433-3692","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-05-11","support":[],"notes":"SN broker relationship.","logs":[{"id":7600,"type":"note","date":"2026-05-11","text":"SN broker relationship.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":77,"name":"Michelle McGrath","title":"Benefits Broker","agency":"Lockton / CA","email":"MPMcGrath@lockton.com","mobile":"818-297-2466","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-05-11","support":[{"name":"Julia Sapon","role":"Account Manager"},{"name":"Michelle Williams","role":"Team Member"}],"notes":"Sarah's ref from Lockton for RFP. Support: Julia Sapon Jsapon@lockton.com / Michelle Williams MichelleW@lockton.com.","logs":[{"id":7700,"type":"note","date":"2026-05-11","text":"Sarah referral from Lockton for RFP.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":78,"name":"Jeff Chen","title":"Benefits Broker","agency":"Acrisure / Costa Mesa","email":"jbchen@acrisure.com","mobile":"626-693-0226","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-05-11","support":[{"name":"Diana Modesto","role":"Account Manager"}],"notes":"Diana Modesto sent RFP from Jeff Chen at Acrisure. AM: dmodesto@acrisure.com.","logs":[{"id":7800,"type":"note","date":"2026-05-11","text":"Diana Modesto sent RFP from Jeff Chen at Acrisure.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":79,"name":"Patty Benkowski","title":"Benefits Broker","agency":"Alliant Benefits","email":"patty.benkowski@alliant.com","mobile":"","direct":"","address":"","linkedin":"","status":"good","state":"CA","startDate":"2026-05-14","support":[{"name":"John Mannen","role":"RH Rep / BD"}],"notes":"Meeting set - John Mannen BD.","logs":[{"id":7900,"type":"meeting","date":"2026-05-14","text":"Meeting set via John Mannen (BD).","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":80,"name":"Cameron Hyland","title":"Benefits Broker","agency":"Gallagher (Woodruff Sawyer)","email":"cameron_hyland@ajg.com","mobile":"","direct":"415-399-6304","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-05-26","support":[],"notes":"Submitted RFP. Opp: 8/1 Lumina Healthcare LLC.","logs":[{"id":8000,"type":"note","date":"2026-05-26","text":"Submitted RFP. Opportunity: 8/1 Lumina Healthcare LLC.","by":"You"}],"emails":[],"followUp":"","meetings":[{"date":"2026-08-01","note":"Lumina Healthcare LLC RFP"}]},{"id":81,"name":"Marvin Uzqueda","title":"Benefits Broker","agency":"James G Parker Insurance Associates","email":"muzqueda@jgparker.com","mobile":"","direct":"","address":"","linkedin":"","status":"good","state":"CA","startDate":"2026-05-26","support":[{"name":"John Mannen","role":"RH Rep / BD"}],"notes":"Meeting set - John Mannen BD.","logs":[{"id":8100,"type":"meeting","date":"2026-05-26","text":"Meeting set via John Mannen (BD).","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":82,"name":"Drake Fudge","title":"Benefits Broker","agency":"BenefitsPro / San Diego","email":"drake@benefitpro.com","mobile":"","direct":"","address":"","linkedin":"","status":"good","state":"CA","startDate":"2026-05-27","support":[{"name":"John Mannen","role":"RH Rep / BD"}],"notes":"Meeting set - John Mannen BD.","logs":[{"id":8200,"type":"meeting","date":"2026-05-27","text":"Meeting set via John Mannen (BD).","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":83,"name":"Lisa Trobaugh","title":"Benefits Broker","agency":"Assured Partners","email":"lisa.trobaugh@assuredpartners.com","mobile":"","direct":"","address":"","linkedin":"","status":"good","state":"CA","startDate":"2026-05-27","support":[{"name":"John Mannen","role":"RH Rep / BD"}],"notes":"Meeting set - John Mannen BD.","logs":[{"id":8300,"type":"meeting","date":"2026-05-27","text":"Meeting set via John Mannen (BD).","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":84,"name":"Corey Coleman","title":"Benefits Broker","agency":"Baldwin Group","email":"corey.colman@baldwinriskpartners.com","mobile":"","direct":"","address":"","linkedin":"","status":"good","state":"CA","startDate":"2026-05-27","support":[{"name":"John Mannen","role":"RH Rep / BD"}],"notes":"Meeting set - John Mannen BD.","logs":[{"id":8400,"type":"meeting","date":"2026-05-27","text":"Meeting set via John Mannen (BD).","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":85,"name":"Sharon Peterson","title":"Benefits Broker","agency":"Sureness Insurance","email":"surenessinsurance@gmail.com","mobile":"310-699-1868","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-05-28","support":[],"notes":"Inbound from broker on 7 lives virgin group.","logs":[{"id":8500,"type":"note","date":"2026-05-28","text":"Inbound from broker on 7 lives virgin group.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":86,"name":"David Keum","title":"Benefits Broker","agency":"Skyline Benefit","email":"dkeum@skylinebenefit.com","mobile":"310-227-9609","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-05-28","support":[],"notes":"Nuture email sent.","logs":[{"id":8600,"type":"email","date":"2026-05-28","text":"Nuture email sent.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":87,"name":"Pauline Riggi","title":"Benefits Broker","agency":"Dickerson Ins / Alera Group","email":"priggi@dickerson-group.com","mobile":"323-805-2911","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-06-01","support":[{"name":"Maggie Ruiz","role":"Team Member"},{"name":"Reyna Zavala","role":"Team Member"}],"notes":"Zoom done 6/1. Opp: Penser 8/1 (59/123 lives).","logs":[{"id":8700,"type":"meeting","date":"2026-06-01","text":"Zoom meeting done. Opportunity: Penser 8/1 (59/123 lives).","by":"You"}],"emails":[],"followUp":"","meetings":[{"date":"2026-08-01","note":"Penser 8/1 — 59/123 lives"}]},{"id":88,"name":"Maggie Ruiz","title":"Benefits Broker","agency":"Dickerson Ins / Alera Group","email":"MaggieR@dickerson-group.com","mobile":"","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-06-02","support":[],"notes":"Zoom done 6/2 on TX group.","logs":[{"id":8800,"type":"meeting","date":"2026-06-02","text":"Zoom meeting done on TX group.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":89,"name":"Reyna Zavala","title":"Benefits Broker","agency":"Dickerson Ins / Alera Group","email":"reyna@dickerson-group.com","mobile":"","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-06-02","support":[],"notes":"Zoom done 6/2 on TX group.","logs":[{"id":8900,"type":"meeting","date":"2026-06-02","text":"Zoom meeting done on TX group.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":90,"name":"Gustavo Garcia","title":"Benefits Broker","agency":"Word and Brown","email":"ggarcia@wordandbrown.com","mobile":"619-936-3727","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-06-03","support":[],"notes":"Zoom ICHRA Edu 101.","logs":[{"id":9000,"type":"meeting","date":"2026-06-03","text":"Zoom ICHRA Edu 101.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":91,"name":"Matt Noonan","title":"Principal","agency":"Cavignac Associates / San Diego","email":"mnoonan@cavignac.com","mobile":"760-473-9991","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-06-03","support":[],"notes":"Ref'd by Gus @ W&B. 6/4: Called LVM - Matt texted and scheduled call for 4pm.","logs":[{"id":9100,"type":"note","date":"2026-06-03","text":"Referred by Gustavo Garcia @ Word and Brown.","by":"You"},{"id":9101,"type":"call","date":"2026-06-04","text":"Called LVM. Matt texted back and scheduled a call for 4pm today.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":92,"name":"Rachel Brown","title":"Benefits Broker","agency":"Heffernen Brokers / San Rafael CA","email":"rachelb@heffins.com","mobile":"408-472-7298","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-06-03","support":[],"notes":"Prospecting outreach on LinkedIn.","logs":[{"id":9200,"type":"note","date":"2026-06-03","text":"Prospecting outreach on LinkedIn.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":93,"name":"Danielle Castellino-McLaughlin","title":"Benefits Broker","agency":"Heffernen Brokers / CA","email":"daniellec@heffins.com","mobile":"702-378-6317","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-06-03","support":[],"notes":"Outreached on LinkedIn - interested in connecting.","logs":[{"id":9300,"type":"note","date":"2026-06-03","text":"Outreached on LinkedIn - interested in connecting.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":94,"name":"Oscar Meraz","title":"Benefits Broker","agency":"Meraz Insurance Services / Chatsworth CA","email":"Oscar@merazins.com","mobile":"818-626-6583","direct":"","address":"10527 Variel Ave, Chatsworth, CA 91311","linkedin":"merazins.com","status":"warm","state":"CA","startDate":"2026-06-03","support":[{"name":"Ruby Meraz","role":"Admin Support"},{"name":"Janet Victoria","role":"Customer Support"}],"notes":"Outreached on LinkedIn, sent email to broker.","logs":[{"id":9400,"type":"note","date":"2026-06-03","text":"Outreached on LinkedIn, sent email to broker.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":95,"name":"Ruby Meraz","title":"Admin Support","agency":"Meraz Insurance Services / Chatsworth CA","email":"Ruby@merazins.com","mobile":"","direct":"","address":"10527 Variel Ave, Chatsworth, CA 91311","linkedin":"","status":"warm","state":"CA","startDate":"2026-06-03","support":[],"notes":"Admin support to Oscar Meraz.","logs":[],"emails":[],"followUp":"","meetings":[]},{"id":96,"name":"Janet Victoria","title":"Customer Support","agency":"Meraz Insurance Services / Chatsworth CA","email":"Janet@merazins.com","mobile":"","direct":"","address":"10527 Variel Ave, Chatsworth, CA 91311","linkedin":"","status":"warm","state":"CA","startDate":"2026-06-03","support":[],"notes":"Customer Support to Oscar Meraz.","logs":[],"emails":[],"followUp":"","meetings":[]},{"id":97,"name":"Michael Lujan","title":"Benefits Broker","agency":"Emerson Rogers GA","email":"","mobile":"818-877-6477","direct":"","address":"","linkedin":"","status":"hot","state":"CA","startDate":"2026-06-04","support":[],"notes":"6/4: Called LVM.","logs":[{"id":9700,"type":"call","date":"2026-06-04","text":"Called LVM.","by":"You"}],"emails":[],"followUp":"","meetings":[]},{"id":98,"name":"Kerrigan Kahl","title":"Benefits Broker","agency":"Kahl Insurance Brokers Solutions / Clovis CA","email":"kahlkr@icloud.com","mobile":"559-261-1172","direct":"","address":"","linkedin":"","status":"warm","state":"CA","startDate":"2026-06-05","support":[],"notes":"6/5: Broker reached out w/ connect request and asked for ICHRA demo.","logs":[{"id":9800,"type":"note","date":"2026-06-05","text":"Broker reached out w/ connect request and asked for a ICHRA demo to schedule.","by":"You"}],"emails":[],"followUp":"","meetings":[]}];
+
+function loadData(){
+  try{
+    if(localStorage.getItem(SEED_KEY)==='1'){
+      const r=localStorage.getItem(STORAGE_KEY);
+      if(r)return JSON.parse(r);
+    }
+    const base={brokers:JSON.parse(JSON.stringify(SEED)),campaigns:[],nextId:99,nextCampId:1};
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(base));
+    localStorage.setItem(SEED_KEY,'1');
+    return base;
+  }catch(e){return{brokers:JSON.parse(JSON.stringify(SEED)),campaigns:[],nextId:99,nextCampId:1};}
+}
+function save(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch(e){}}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
+
+let data=loadData();
+let S={view:'dashboard',broker:null,tab:'overview',addBroker:false,addLog:false,addEmail:false,compose:false,campaign:false,editBroker:null,search:'',statusF:'all',stateF:'all',logType:'call',logText:'',composeTarget:null,campDraft:{name:'',subject:'',body:'',recipients:[]},newB:emptyB(),page:0,pageSize:25};
+function emptyB(){return{name:'',title:'Benefits Broker',agency:'',email:'',mobile:'',direct:'',address:'',linkedin:'',status:'warm',state:'CA',notes:'',support:[],startDate:new Date().toISOString().slice(0,10),followUp:'',meetings:[]};}
+
+function h(tag,props,...ch){
+  const e=document.createElement(tag);
+  for(const[k,v]of Object.entries(props||{})){
+    if(k==='cls')e.className=v;
+    else if(k==='style')Object.assign(e.style,v);
+    else if(k.startsWith('on'))e.addEventListener(k.slice(2).toLowerCase(),v);
+    else e.setAttribute(k,v);
+  }
+  for(const c of ch.flat())if(c!=null)e.appendChild(typeof c==='string'?document.createTextNode(c):c);
+  return e;
+}
+function ico(n,style=''){const i=document.createElement('span');i.textContent=n;i.setAttribute('aria-hidden','true');if(style)i.style.cssText=style;return i;}
+function badgeEl(s){const map={hot:['🔥 Hot','badge-hot'],warm:['☀️ Warm','badge-warm'],good:['✅ Good Fit','badge-good'],cold:['❄️ Cold','badge-cold']};const[l,c]=map[s]||['?','badge-cold'];return h('span',{cls:`badge ${c}`},l);}
+const AC=[['#eeedfe','#3c3489'],['#e1f5ee','#0f6e56'],['#faece7','#993c1d'],['#faeeda','#854f0b'],['#eaf3de','#3b6d11'],['#fbeaf0','#993556']];
+function av(name,idx,lg=false){const[bg,col]=AC[idx%AC.length];const in2=name.split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();return h('div',{cls:`avatar${lg?' avatar-lg':''}`,style:`background:${bg};color:${col}`},in2);}
+function fmtDate(s){if(!s)return'—';try{const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return s;}}
+
+function render(){document.getElementById('app').innerHTML='';document.getElementById('app').appendChild(buildApp());}
+
+function buildApp(){
+  const wrap=h('div',{cls:'app'});
+  wrap.appendChild(buildSidebar());
+  const main=h('div',{cls:'main'});
+  wrap.appendChild(main);
+  if(S.view==='dashboard'){main.appendChild(topbar('📊 Dashboard'));main.appendChild(buildDash());}
+  else if(S.view==='brokers'){main.appendChild(topbar('👥 All Brokers',true));main.appendChild(buildList());}
+  else if(S.view==='detail'){main.appendChild(topbar('Broker Profile',false,true));main.appendChild(buildDetail());}
+  else if(S.view==='campaigns'){main.appendChild(topbar('📧 Email Campaigns',false,false,true));main.appendChild(buildCampaigns());}
+  else if(S.view==='reengagement'){main.appendChild(topbar('🔄 Re-engagement'));main.appendChild(buildReengage());}
+  if(S.addBroker)main.appendChild(modalAddBroker());
+  if(S.addLog&&S.broker)main.appendChild(modalAddLog());
+  if(S.addEmail&&S.broker)main.appendChild(modalAddEmail());
+  if(S.compose)main.appendChild(modalCompose());
+  if(S.campaign)main.appendChild(modalCampaign());
+  return wrap;
+}
+
+function buildSidebar(){
+  const s=h('div',{cls:'sidebar'});
+  s.appendChild(h('div',{cls:'sidebar-logo'},h('h1',{},'ICHRA Broker CRM'),h('p',{},'CA & HI Markets · Rep: SN')));
+  function nb(icon2,label,view){const b=h('button',{cls:`nav-btn${S.view===view||S.view===view+'-detail'?' active':''}`,onclick:()=>{S.view=view;S.broker=null;S.page=0;render();}},h('span',{cls:'nav-icon'},icon2),label);return b;}
+  function nbs(icon2,label,status){const cnt=data.brokers.filter(b=>b.status===status).length;const b=h('button',{cls:'nav-btn',onclick:()=>{S.view='brokers';S.statusF=status;S.page=0;render();}},h('span',{cls:'nav-icon'},icon2),label,h('span',{cls:'nav-badge'},cnt+''));return b;}
+  s.appendChild(h('div',{style:'padding:8px'},
+    h('div',{cls:'nav-section'},'Main'),nb('📊','Dashboard','dashboard'),nb('👥','All Brokers','brokers'),
+    h('div',{cls:'nav-section'},'Pipeline'),nbs('🔥','Hot Leads','hot'),nbs('☀️','Warm','warm'),nbs('✅','Good Fit','good'),nbs('❄️','Cold','cold'),
+    h('div',{cls:'nav-section'},'Tools'),nb('🔄','Re-engagement','reengagement'),nb('📧','Email Campaigns','campaigns')
+  ));
+  const coldD=data.brokers.filter(b=>b.status==='cold').length;
+  s.appendChild(h('div',{cls:'sidebar-footer'},
+    h('div',{style:'font-weight:600;margin-bottom:4px'},`${data.brokers.length} brokers`),
+    h('div',{},`🔥 ${data.brokers.filter(b=>b.status==='hot').length} hot  ·  ❄️ ${coldD} cold`)
+  ));
+  return s;
+}
+
+function topbar(title,showAdd=false,showBack=false,showCampBtn=false){
+  const bar=h('div',{cls:'topbar'});
+  if(showBack){const b=h('button',{cls:'btn btn-sm',onclick:()=>{S.view='brokers';render();}},'← Back');bar.appendChild(b);}
+  bar.appendChild(h('h2',{},title));
+  if(showAdd){
+    const inp=h('input',{type:'text',cls:'search-bar',placeholder:'Search name or agency...'});
+    inp.value=S.search;inp.oninput=e=>{S.search=e.target.value;S.page=0;render();};bar.appendChild(inp);
+    const sf=h('select',{cls:'filter-sel',onchange:e=>{S.statusF=e.target.value;S.page=0;render();}});
+    ['all','hot','warm','good','cold'].forEach(v=>{const o=h('option',{value:v},v==='all'?'All Status':v[0].toUpperCase()+v.slice(1));if(v===S.statusF)o.selected=true;sf.appendChild(o);});bar.appendChild(sf);
+    const stf=h('select',{cls:'filter-sel',onchange:e=>{S.stateF=e.target.value;S.page=0;render();}});
+    ['all','CA','HI','OH'].forEach(v=>{const o=h('option',{value:v},v==='all'?'All States':v);if(v===S.stateF)o.selected=true;stf.appendChild(o);});bar.appendChild(stf);
+    bar.appendChild(h('button',{cls:'btn btn-sm',onclick:exportCSV},'⬇ Export CSV'));
+    bar.appendChild(h('button',{cls:'btn btn-primary btn-sm',onclick:()=>{S.addBroker=true;S.newB=emptyB();S.editBroker=null;render();}},'+ Add Broker'));
+  }
+  if(showCampBtn)bar.appendChild(h('button',{cls:'btn btn-primary btn-sm',onclick:()=>{S.campaign=true;S.campDraft={name:'',subject:'',body:'',recipients:[]};render();}},'+ New Campaign'));
+  return bar;
+}
+
+function buildDash(){
+  const c=h('div',{cls:'content'});
+  const hot=data.brokers.filter(b=>b.status==='hot').length,warm=data.brokers.filter(b=>b.status==='warm').length,good=data.brokers.filter(b=>b.status==='good').length,cold=data.brokers.filter(b=>b.status==='cold').length;
+  const logs=data.brokers.reduce((s,b)=>s+(b.logs||[]).length,0);
+  const sr=h('div',{cls:'stats-row'});
+  [[data.brokers.length,'Total Brokers','#1a1a1a'],[hot,'🔥 Hot Leads','#993c1d'],[warm,'☀️ Warm','#854f0b'],[good,'✅ Good Fit','#3b6d11'],[cold,'❄️ Cold','#185fa5'],[logs,'Activities Logged','#555']].forEach(([v,l,col])=>{
+    const sc=h('div',{cls:'stat-card'});sc.appendChild(h('div',{cls:'label'},l));sc.appendChild(h('div',{cls:'value',style:`color:${col}`},v+''));sr.appendChild(sc);
+  });
+  c.appendChild(sr);
+
+  const hot_brokers=data.brokers.filter(b=>b.status==='hot').slice(0,12);
+  if(hot_brokers.length){
+    c.appendChild(h('div',{cls:'priority-banner'},
+      h('h4',{},'🎯 Priority Outreach — Hot Leads to Keep Top of Mind'),
+      h('div',{cls:'priority-chips'},...hot_brokers.map(b=>{
+        const chip=h('button',{cls:'priority-chip',onclick:()=>{S.broker=b.id;S.view='detail';S.tab='overview';render();}},b.name+' · '+b.agency);return chip;
+      }))
+    ));
+  }
+
+  const upcoming=data.brokers.filter(b=>b.followUp&&b.status!=='cold').sort((a,b)=>a.followUp.localeCompare(b.followUp)).slice(0,6);
+  if(upcoming.length){
+    c.appendChild(h('div',{cls:'section-header'},h('h3',{},'📅 Upcoming Follow-ups')));
+    const t=h('table',{cls:'broker-table'});
+    t.appendChild(h('thead',{},h('tr',{},h('th',{},'Broker'),h('th',{},'Agency'),h('th',{},'Status'),h('th',{},'Follow-up Date'))));
+    const tb=h('tbody',{});
+    upcoming.forEach((b,i)=>{
+      const tr=h('tr',{cls:'clickable',onclick:()=>{S.broker=b.id;S.view='detail';S.tab='overview';render();}});
+      tr.appendChild(h('td',{},h('div',{style:'display:flex;align-items:center;gap:8px'},av(b.name,i),h('strong',{},b.name))));
+      tr.appendChild(h('td',{},b.agency));tr.appendChild(h('td',{},badgeEl(b.status)));tr.appendChild(h('td',{},fmtDate(b.followUp)));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);c.appendChild(t);
+  }
+
+  const recentLogs=data.brokers.flatMap(b=>(b.logs||[]).map(l=>({...l,broker:b}))).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+  if(recentLogs.length){
+    c.appendChild(h('div',{cls:'section-header',style:'margin-top:20px'},h('h3',{},'🕐 Recent Activity')));
+    const t=h('table',{cls:'broker-table'});
+    t.appendChild(h('thead',{},h('tr',{},h('th',{},'Date'),h('th',{},'Broker'),h('th',{},'Agency'),h('th',{},'Activity'))));
+    const tb=h('tbody',{});
+    recentLogs.forEach(l=>{
+      const tr=h('tr',{cls:'clickable',onclick:()=>{S.broker=l.broker.id;S.view='detail';S.tab='logs';render();}});
+      tr.appendChild(h('td',{},fmtDate(l.date)));
+      tr.appendChild(h('td',{},h('strong',{},l.broker.name)));
+      tr.appendChild(h('td',{style:'color:var(--text-secondary)'},l.broker.agency));
+      tr.appendChild(h('td',{},l.text&&l.text.length>90?l.text.slice(0,90)+'…':l.text));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);c.appendChild(t);
+  }
+  return c;
+}
+
+function buildList(){
+  const c=h('div',{cls:'content'});
+  let filtered=data.brokers.filter(b=>{
+    if(S.statusF!=='all'&&b.status!==S.statusF)return false;
+    if(S.stateF!=='all'&&b.state!==S.stateF)return false;
+    if(S.search){const q=S.search.toLowerCase();if(!b.name.toLowerCase().includes(q)&&!(b.agency||'').toLowerCase().includes(q))return false;}
+    return true;
+  });
+  const total=filtered.length,start=S.page*S.pageSize,paged=filtered.slice(start,start+S.pageSize);
+  c.appendChild(h('div',{style:'margin-bottom:10px;font-size:12px;color:var(--text-tertiary)'},`Showing ${start+1}–${Math.min(start+paged.length,total)} of ${total} brokers`));
+  if(!paged.length){c.appendChild(h('div',{cls:'empty'},h('div',{cls:'icon'},'🔍'),'No brokers match your filters.'));return c;}
+  const t=h('table',{cls:'broker-table'});
+  t.appendChild(h('thead',{},h('tr',{},h('th',{},'Broker'),h('th',{},'Agency'),h('th',{},'St'),h('th',{},'Status'),h('th',{},'Outreach Date'),h('th',{},'Last Activity'),h('th',{},''))));
+  const tb=h('tbody',{});
+  paged.forEach((b,i)=>{
+    const ll=b.logs&&b.logs.length?b.logs[b.logs.length-1]:null;
+    const tr=h('tr',{cls:'clickable',onclick:()=>{S.broker=b.id;S.view='detail';S.tab='overview';render();}});
+    tr.appendChild(h('td',{},h('div',{style:'display:flex;align-items:center;gap:9px'},av(b.name,i),h('div',{},h('div',{style:'font-weight:600'},b.name),h('div',{style:'font-size:11px;color:var(--text-tertiary)'},b.title)))));
+    tr.appendChild(h('td',{style:'max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'},b.agency));
+    tr.appendChild(h('td',{},b.state));tr.appendChild(h('td',{},badgeEl(b.status)));
+    tr.appendChild(h('td',{},fmtDate(b.startDate)));tr.appendChild(h('td',{},ll?fmtDate(ll.date):'—'));
+    const acts=h('td',{style:'display:flex;gap:5px'});
+    const vb=h('button',{cls:'btn btn-sm',onclick:(e)=>{e.stopPropagation();S.broker=b.id;S.view='detail';S.tab='overview';render();}},'👁 View');
+    const mb=h('button',{cls:'btn btn-sm',onclick:(e)=>{e.stopPropagation();S.composeTarget=b;S.compose=true;render();}},h('span',{},'📧'));
+    acts.appendChild(vb);acts.appendChild(mb);tr.appendChild(acts);
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);c.appendChild(t);
+  if(total>S.pageSize){
+    const pages=Math.ceil(total/S.pageSize);
+    const pg=h('div',{cls:'pagination'});
+    pg.appendChild(h('span',{style:'color:var(--text-tertiary);font-size:13px'},`Page ${S.page+1} of ${pages}`));
+    const prev=h('button',{cls:'btn btn-sm',onclick:()=>{S.page--;render();}},'← Prev');prev.disabled=S.page===0;
+    const next=h('button',{cls:'btn btn-sm',onclick:()=>{S.page++;render();}},'Next →');next.disabled=S.page>=pages-1;
+    pg.appendChild(prev);pg.appendChild(next);c.appendChild(pg);
+  }
+  return c;
+}
+
+function buildDetail(){
+  const b=data.brokers.find(x=>x.id===S.broker);
+  if(!b)return h('div',{cls:'content'},'Broker not found.');
+  const c=h('div',{cls:'content'});
+  const idx=data.brokers.indexOf(b);
+  const hdr=h('div',{cls:'contact-header'});
+  hdr.appendChild(av(b.name,idx,true));
+  const hi=h('div',{});
+  hi.appendChild(h('h2',{style:'font-size:20px;font-weight:700;margin-bottom:4px'},b.name));
+  hi.appendChild(h('div',{style:'font-size:14px;color:var(--text-secondary)'},b.title+' · '+b.agency));
+  hi.appendChild(h('div',{style:'margin-top:8px'},badgeEl(b.status)));
+  hdr.appendChild(hi);
+  const spills=h('div',{cls:'status-pills',style:'margin-left:auto'});
+  [{s:'hot',l:'🔥 Hot'},{s:'warm',l:'☀️ Warm'},{s:'good',l:'✅ Good Fit'},{s:'cold',l:'❄️ Cold'}].forEach(({s,l})=>{
+    const p=h('button',{cls:`status-pill${b.status===s?' sel-'+s:''}`,onclick:()=>{b.status=s;save(data);toast('Status updated!');render();}},l);spills.appendChild(p);
+  });
+  hdr.appendChild(spills);c.appendChild(hdr);
+
+  const tabs=h('div',{cls:'tabs'});
+  [{id:'overview',l:'📋 Overview'},{id:'logs',l:'📝 Activity Log'},{id:'emails',l:'📧 Emails'},{id:'meetings',l:'📅 Meetings'},{id:'compose',l:'✉️ Send Email'}].forEach(({id,l})=>{
+    const t=h('button',{cls:`tab-btn${S.tab===id?' active':''}`,onclick:()=>{S.tab=id;render();}},l);tabs.appendChild(t);
+  });
+  c.appendChild(tabs);
+
+  if(S.tab==='overview'){
+    const ig=h('div',{cls:'info-grid'});
+    [['📧','Email',b.email,`mailto:${b.email}`,true],['📱','Mobile',b.mobile||'—',null,false],['☎️','Direct',b.direct||'—',null,false],['📍','Address',b.address||'—',null,false],['🔗','LinkedIn',b.linkedin||'—',b.linkedin?`https://${b.linkedin}`:null,true],['📅','Outreach Date',fmtDate(b.startDate),null,false],['🗓','Follow-up',fmtDate(b.followUp),null,false],['🗺','State',b.state,null,false]].forEach(([ic,label,val,href,isLink])=>{
+      const item=h('div',{cls:'info-item'});item.appendChild(h('span',{cls:'icon'},ic));
+      const d=h('div',{});d.appendChild(h('div',{cls:'detail'},label));
+      d.appendChild(isLink&&href?h('a',{cls:'val',href,target:'_blank'},val):h('div',{cls:'val'},val||'—'));
+      item.appendChild(d);ig.appendChild(item);
+    });
+    c.appendChild(ig);
+    if(b.support&&b.support.length){
+      c.appendChild(h('div',{style:'font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em'},'Support Team'));
+      const sw=h('div',{style:'margin-bottom:16px'});b.support.forEach(s=>sw.appendChild(h('span',{cls:'support-chip'},s.name+' — '+s.role)));c.appendChild(sw);
+    }
+    c.appendChild(h('div',{cls:'divider'}));
+    c.appendChild(h('div',{style:'font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em'},'Notes'));
+    const notesBox=h('div',{style:'background:var(--bg-secondary);border-radius:var(--radius);padding:14px;font-size:13px;line-height:1.7;border:1px solid var(--border-light)'},b.notes||'No notes yet.');
+    c.appendChild(notesBox);
+    c.appendChild(h('div',{cls:'divider'}));
+    const eb=h('button',{cls:'btn btn-sm',onclick:()=>{S.editBroker={...b,support:[...(b.support||[])],meetings:[...(b.meetings||[])]};S.addBroker=true;render();}},'✏️ Edit Broker Info');
+    c.appendChild(eb);
+
+  }else if(S.tab==='logs'){
+    const addBtn=h('button',{cls:'btn btn-sm',style:'margin-bottom:14px',onclick:()=>{S.addLog=true;S.logText='';render();}},'+ Log Activity');
+    c.appendChild(addBtn);
+    const logs=[...(b.logs||[])].reverse();
+    if(!logs.length){c.appendChild(h('div',{cls:'empty'},h('div',{cls:'icon'},'📝'),'No activity logged yet.'));}
+    else{
+      const tl=h('div',{cls:'timeline'});
+      const tmap={call:'📞 Call',email:'📧 Email',meeting:'🤝 Meeting',note:'📝 Note'};
+      logs.forEach(log=>{
+        const item=h('div',{cls:'t-item'});item.appendChild(h('div',{cls:'t-dot'}));
+        item.appendChild(h('div',{cls:'t-meta'},(tmap[log.type]||log.type)+' · '+fmtDate(log.date)));
+        item.appendChild(h('div',{cls:'t-body'},log.text));
+        tl.appendChild(item);
+      });c.appendChild(tl);
+    }
+  }else if(S.tab==='emails'){
+    const row=h('div',{style:'display:flex;gap:8px;margin-bottom:14px'});
+    row.appendChild(h('button',{cls:'btn btn-sm',onclick:()=>{S.addEmail=true;render();}},'+ Log Email'));
+    row.appendChild(h('button',{cls:'btn btn-primary btn-sm',onclick:()=>{S.composeTarget=b;S.compose=true;render();}},'📧 Compose & Send'));
+    c.appendChild(row);
+    const emails=(b.emails||[]).slice().reverse();
+    if(!emails.length){c.appendChild(h('div',{cls:'empty'},h('div',{cls:'icon'},'📧'),'No emails logged yet.'));}
+    else emails.forEach(em=>{
+      const card=h('div',{cls:'email-card'});
+      const dirBadge=h('span',{cls:'badge',style:`background:${em.direction==='sent'?'#eaf3de':'#eeedfe'};color:${em.direction==='sent'?'#3b6d11':'#3c3489'};margin-right:8px`},em.direction==='sent'?'Sent ↑':'Received ↓');
+      card.appendChild(h('div',{cls:'subject'},dirBadge,em.subject));
+      card.appendChild(h('div',{cls:'meta'},fmtDate(em.date)));
+      if(em.body)card.appendChild(h('div',{cls:'preview'},em.body.length>250?em.body.slice(0,250)+'…':em.body));
+      c.appendChild(card);
+    });
+  }else if(S.tab==='meetings'){
+    const addM=h('button',{cls:'btn btn-sm',style:'margin-bottom:14px',onclick:()=>{const d=prompt('Meeting date (YYYY-MM-DD):');if(!d)return;const n=prompt('Notes:');b.meetings=b.meetings||[];b.meetings.push({date:d,note:n||''});save(data);toast('Meeting added!');render();}},'+ Schedule Meeting');
+    c.appendChild(addM);
+    if(!b.meetings||!b.meetings.length){c.appendChild(h('div',{cls:'empty'},h('div',{cls:'icon'},'📅'),'No meetings scheduled.'));}
+    else{
+      const t=h('table',{cls:'broker-table'});
+      t.appendChild(h('thead',{},h('tr',{},h('th',{},'Date'),h('th',{},'Notes'),h('th',{},''))));
+      const tb=h('tbody',{});
+      [...b.meetings].sort((a,bb)=>(a.date||'').localeCompare(bb.date||'')).forEach((m,mi)=>{
+        const tr=h('tr',{});tr.appendChild(h('td',{},fmtDate(m.date)));tr.appendChild(h('td',{},m.note));
+        const del=h('button',{cls:'btn btn-sm btn-danger',onclick:()=>{b.meetings.splice(mi,1);save(data);render();}},'✕');tr.appendChild(h('td',{},del));
+        tb.appendChild(tr);
+      });t.appendChild(tb);c.appendChild(t);
+    }
+    c.appendChild(h('div',{cls:'divider'}));
+    c.appendChild(h('div',{style:'font-weight:600;margin-bottom:8px'},'Follow-up Date'));
+    const fuRow=h('div',{style:'display:flex;gap:8px;align-items:center'});
+    const fi=h('input',{type:'date',style:'width:180px'});fi.value=b.followUp||'';
+    fuRow.appendChild(fi);fuRow.appendChild(h('button',{cls:'btn btn-primary btn-sm',onclick:()=>{b.followUp=fi.value;save(data);toast('Follow-up saved!');render();}},'Save'));
+    c.appendChild(fuRow);
+  }else if(S.tab==='compose'){
+    S.composeTarget=b;c.appendChild(inlineCompose(b));
+  }
+  return c;
+}
+
+function inlineCompose(b){
+  const wrap=h('div',{});
+  wrap.appendChild(h('div',{style:'margin-bottom:12px;color:var(--text-secondary);font-size:13px'},'To: ',h('strong',{},b.email||'(no email on file)')));
+  const si=h('input',{type:'text',placeholder:'Subject',style:'width:100%;margin-bottom:10px'});
+  const bi=h('textarea',{placeholder:'Write your email here...',style:'width:100%;min-height:260px'});
+  const sb=h('button',{cls:'btn btn-primary',style:'margin-top:10px',onclick:()=>{
+    if(!si.value.trim()){alert('Subject required.');return;}
+    b.emails=b.emails||[];b.emails.push({id:Date.now(),direction:'sent',subject:si.value,date:new Date().toISOString().slice(0,10),body:bi.value});
+    b.logs=b.logs||[];b.logs.push({id:Date.now(),type:'email',date:new Date().toISOString().slice(0,10),text:`Sent: "${si.value}"`,by:'You'});
+    save(data);toast('Email logged!');S.tab='emails';render();
+  }},'📤 Send & Log Email');
+  wrap.appendChild(si);wrap.appendChild(bi);wrap.appendChild(sb);return wrap;
+}
+
+function buildReengage(){
+  const c=h('div',{cls:'content'});
+  const cold=data.brokers.filter(b=>b.status==='cold');
+  if(!cold.length){c.appendChild(h('div',{cls:'empty'},h('div',{cls:'icon'},'🎉'),'No cold brokers. Great pipeline health!'));return c;}
+  c.appendChild(h('div',{cls:'section-header'},h('h3',{},`❄️ Cold Brokers (${cold.length})`)));
+  c.appendChild(h('p',{style:'color:var(--text-secondary);font-size:13px;margin-bottom:16px'},'Re-engage or close out these brokers. Set a 6-month reminder to check back in.'));
+  cold.forEach(b=>{
+    const card=h('div',{cls:'reengage-card'});
+    const info=h('div',{});
+    info.appendChild(h('h4',{},b.name));
+    info.appendChild(h('p',{},b.agency+' · '+b.state));
+    if(b.coldDate)info.appendChild(h('p',{style:'color:var(--text-tertiary);font-size:11px;margin-top:3px'},'Went cold: '+fmtDate(b.coldDate)));
+    if(b.reengageDate)info.appendChild(h('p',{style:'color:var(--amber-text);font-size:12px;font-weight:600;margin-top:3px'},'Re-engage: '+fmtDate(b.reengageDate)));
+    card.appendChild(info);
+    const acts=h('div',{style:'display:flex;gap:6px;flex-wrap:wrap'});
+    acts.appendChild(h('button',{cls:'btn btn-sm',onclick:()=>{S.broker=b.id;S.view='detail';S.tab='overview';render();}},'👁 View'));
+    acts.appendChild(h('button',{cls:'btn btn-sm',onclick:()=>{S.composeTarget=b;S.compose=true;render();}},'📧 Email'));
+    acts.appendChild(h('button',{cls:'btn btn-sm btn-warning',onclick:()=>{b.status='warm';b.coldDate=null;b.reengageDate=null;save(data);toast(b.name+' moved to Warm!');render();}},'🔃 Re-engage'));
+    acts.appendChild(h('button',{cls:'btn btn-sm',onclick:()=>{const d=prompt('Set re-engage reminder date (YYYY-MM-DD):');if(d){b.reengageDate=d;save(data);toast('Reminder set!');render();}}},'📅 Set Reminder'));
+    acts.appendChild(h('button',{cls:'btn btn-sm btn-danger',onclick:()=>{if(confirm('Close out '+b.name+'? Data will be archived.')){data.brokers=data.brokers.filter(x=>x.id!==b.id);save(data);toast(b.name+' closed out.');render();}}},'✕ Close Out'));
+    card.appendChild(acts);c.appendChild(card);
+  });
+  return c;
+}
+
+function buildCampaigns(){
+  const c=h('div',{cls:'content'});
+  if(!data.campaigns.length){c.appendChild(h('div',{cls:'empty'},h('div',{cls:'icon'},'📧'),'No campaigns yet. Click "New Campaign" to start.'));return c;}
+  data.campaigns.slice().reverse().forEach(camp=>{
+    const row=h('div',{cls:'camp-row'});
+    const info=h('div',{});
+    info.appendChild(h('h4',{},camp.name));info.appendChild(h('p',{},camp.subject));
+    info.appendChild(h('div',{style:'font-size:11px;color:var(--text-tertiary);margin-top:3px'},`${camp.recipients.length} recipients · ${camp.status}${camp.date?' · '+fmtDate(camp.date):''}`));
+    row.appendChild(info);
+    const acts=h('div',{style:'display:flex;gap:6px;align-items:center'});
+    if(camp.status==='draft')acts.appendChild(h('button',{cls:'btn btn-primary btn-sm',onclick:()=>{camp.status='sent';camp.date=new Date().toISOString().slice(0,10);save(data);toast('Campaign sent!');render();}},'📤 Send Now'));
+    else acts.appendChild(h('span',{style:'font-size:12px;color:var(--green-text);font-weight:600'},'✓ Sent '+fmtDate(camp.date)));
+    acts.appendChild(h('button',{cls:'btn btn-sm btn-danger',onclick:()=>{if(confirm('Delete campaign?')){data.campaigns=data.campaigns.filter(x=>x.id!==camp.id);save(data);render();}}},'✕'));
+    row.appendChild(acts);c.appendChild(row);
+  });
+  return c;
+}
+
+function modalAddBroker(){
+  const b=S.editBroker||S.newB;const isEdit=!!S.editBroker;
+  const ov=h('div',{cls:'modal-overlay'});
+  const m=h('div',{cls:'modal'});
+  m.appendChild(h('div',{cls:'modal-header'},h('h3',{},isEdit?'✏️ Edit Broker':'➕ Add New Broker'),h('button',{cls:'btn btn-sm',onclick:()=>{S.addBroker=false;S.editBroker=null;render();}},'✕')));
+  const body=h('div',{cls:'modal-body'});const grid=h('div',{cls:'form-grid'});
+  function field(label,key,full=false,type='text'){
+    const g=h('div',{cls:`form-group${full?' full':''}`});g.appendChild(h('label',{},label));
+    const inp=h('input',{type,placeholder:label});inp.value=b[key]||'';inp.oninput=e=>b[key]=e.target.value;g.appendChild(inp);grid.appendChild(g);
+  }
+  field('Full Name','name');field('Title','title');field('Agency','agency');field('Email','email',false,'email');
+  field('Mobile','mobile');field('Direct Phone','direct');field('State','state');field('LinkedIn URL','linkedin');
+  field('Outreach Date','startDate',false,'date');field('Follow-up Date','followUp',false,'date');field('Address','address',true);
+  const ng=h('div',{cls:'form-group full'});ng.appendChild(h('label',{},'Notes'));
+  const nt=h('textarea',{placeholder:'Notes about this broker...'});nt.value=b.notes||'';nt.oninput=e=>b.notes=e.target.value;ng.appendChild(nt);grid.appendChild(ng);
+  const sg=h('div',{cls:'form-group full'});sg.appendChild(h('label',{},'Status'));
+  const pills=h('div',{cls:'status-pills'});
+  [{s:'hot',l:'🔥 Hot'},{s:'warm',l:'☀️ Warm'},{s:'good',l:'✅ Good Fit'},{s:'cold',l:'❄️ Cold'}].forEach(({s,l})=>{
+    const p=h('button',{cls:`status-pill${b.status===s?' sel-'+s:''}`,onclick:()=>{b.status=s;render();}},l);pills.appendChild(p);
+  });sg.appendChild(pills);grid.appendChild(sg);
+  const supG=h('div',{cls:'form-group full'});supG.appendChild(h('label',{},'Support Team (one per line: Name, Role)'));
+  const supT=h('textarea',{placeholder:'Kathy Ruiz, Account Manager\nMichelle Ribeiro, Team Member'});
+  supT.value=(b.support||[]).map(s=>s.name+', '+s.role).join('\n');
+  supT.oninput=e=>{b.support=e.target.value.split('\n').filter(Boolean).map(l=>{const p=l.split(',').map(x=>x.trim());return{name:p[0]||'',role:p[1]||''};});};
+  supG.appendChild(supT);grid.appendChild(supG);
+  body.appendChild(grid);m.appendChild(body);
+  const foot=h('div',{cls:'modal-footer'});
+  foot.appendChild(h('button',{cls:'btn',onclick:()=>{S.addBroker=false;S.editBroker=null;render();}},'Cancel'));
+  foot.appendChild(h('button',{cls:'btn btn-primary',onclick:()=>{
+    if(!b.name.trim()){alert('Name required.');return;}
+    if(isEdit){const i=data.brokers.findIndex(x=>x.id===b.id);if(i!==-1)data.brokers[i]={...data.brokers[i],...b};}
+    else{b.id=data.nextId++;b.logs=[];b.emails=[];b.meetings=[];data.brokers.push(b);}
+    S.addBroker=false;S.editBroker=null;save(data);toast(isEdit?'Broker updated!':'Broker added!');render();
+  }},isEdit?'Save Changes':'Add Broker'));
+  m.appendChild(foot);ov.appendChild(m);ov.onclick=e=>{if(e.target===ov){S.addBroker=false;S.editBroker=null;render();}};return ov;
+}
+
+function modalAddLog(){
+  const b=data.brokers.find(x=>x.id===S.broker);
+  const ov=h('div',{cls:'modal-overlay'});const m=h('div',{cls:'modal'});
+  m.appendChild(h('div',{cls:'modal-header'},h('h3',{},'📝 Log Activity for '+b.name),h('button',{cls:'btn btn-sm',onclick:()=>{S.addLog=false;render();}},'✕')));
+  const body=h('div',{cls:'modal-body'});
+  const typeG=h('div',{cls:'form-group',style:'margin-bottom:12px'});typeG.appendChild(h('label',{},'Activity Type'));
+  const ts=h('select',{});['call','email','meeting','note'].forEach(t=>{const o=h('option',{value:t},t[0].toUpperCase()+t.slice(1));if(t===S.logType)o.selected=true;ts.appendChild(o);});
+  ts.onchange=e=>S.logType=e.target.value;typeG.appendChild(ts);
+  const dG=h('div',{cls:'form-group',style:'margin-bottom:12px'});dG.appendChild(h('label',{},'Date'));
+  let ld=new Date().toISOString().slice(0,10);const di=h('input',{type:'date'});di.value=ld;di.onchange=e=>ld=e.target.value;dG.appendChild(di);
+  const nG=h('div',{cls:'form-group'});nG.appendChild(h('label',{},'Notes'));
+  const ta=h('textarea',{placeholder:'What happened in this interaction?'});ta.value=S.logText;ta.oninput=e=>S.logText=e.target.value;nG.appendChild(ta);
+  body.appendChild(typeG);body.appendChild(dG);body.appendChild(nG);m.appendChild(body);
+  const foot=h('div',{cls:'modal-footer'});
+  foot.appendChild(h('button',{cls:'btn',onclick:()=>{S.addLog=false;render();}},'Cancel'));
+  foot.appendChild(h('button',{cls:'btn btn-primary',onclick:()=>{
+    if(!S.logText.trim()){alert('Notes required.');return;}
+    b.logs=b.logs||[];b.logs.push({id:Date.now(),type:S.logType,date:ld,text:S.logText,by:'You'});
+    S.addLog=false;S.logText='';save(data);toast('Activity logged!');render();
+  }},'Log Activity'));
+  m.appendChild(foot);ov.appendChild(m);ov.onclick=e=>{if(e.target===ov){S.addLog=false;render();}};return ov;
+}
+
+function modalAddEmail(){
+  const b=data.brokers.find(x=>x.id===S.broker);
+  const ov=h('div',{cls:'modal-overlay'});const m=h('div',{cls:'modal'});
+  m.appendChild(h('div',{cls:'modal-header'},h('h3',{},'📧 Log Email for '+b.name),h('button',{cls:'btn btn-sm',onclick:()=>{S.addEmail=false;render();}},'✕')));
+  const body=h('div',{cls:'modal-body'});
+  let dir='sent',ed=new Date().toISOString().slice(0,10);
+  const dG=h('div',{cls:'form-group',style:'margin-bottom:12px'});dG.appendChild(h('label',{},'Direction'));
+  const ds=h('select',{onchange:e=>dir=e.target.value});
+  [{v:'sent',l:'Sent (Outbound)'},{v:'received',l:'Received (Inbound)'}].forEach(({v,l})=>ds.appendChild(h('option',{value:v},l)));dG.appendChild(ds);
+  const dateG=h('div',{cls:'form-group',style:'margin-bottom:12px'});dateG.appendChild(h('label',{},'Date'));
+  const di=h('input',{type:'date'});di.value=ed;di.onchange=e=>ed=e.target.value;dateG.appendChild(di);
+  const sG=h('div',{cls:'form-group',style:'margin-bottom:12px'});sG.appendChild(h('label',{},'Subject'));const si=h('input',{type:'text',placeholder:'Subject'});sG.appendChild(si);
+  const bG=h('div',{cls:'form-group'});bG.appendChild(h('label',{},'Email Body'));const bi=h('textarea',{placeholder:'Paste or type email content...'});bG.appendChild(bi);
+  body.appendChild(dG);body.appendChild(dateG);body.appendChild(sG);body.appendChild(bG);m.appendChild(body);
+  const foot=h('div',{cls:'modal-footer'});
+  foot.appendChild(h('button',{cls:'btn',onclick:()=>{S.addEmail=false;render();}},'Cancel'));
+  foot.appendChild(h('button',{cls:'btn btn-primary',onclick:()=>{
+    if(!si.value.trim()){alert('Subject required.');return;}
+    b.emails=b.emails||[];b.emails.push({id:Date.now(),direction:dir,subject:si.value,date:ed,body:bi.value});
+    S.addEmail=false;save(data);toast('Email logged!');render();
+  }},'Log Email'));
+  m.appendChild(foot);ov.appendChild(m);ov.onclick=e=>{if(e.target===ov){S.addEmail=false;render();}};return ov;
+}
+
+function modalCompose(){
+  const b=S.composeTarget;
+  const ov=h('div',{cls:'modal-overlay'});const m=h('div',{cls:'modal'});
+  m.appendChild(h('div',{cls:'modal-header'},h('h3',{},`📧 Email to ${b?b.name:'Broker'}`),h('button',{cls:'btn btn-sm',onclick:()=>{S.compose=false;render();}},'✕')));
+  const body=h('div',{cls:'modal-body'});
+  body.appendChild(h('div',{style:'margin-bottom:12px;color:var(--text-secondary)'},'To: ',h('strong',{},b?b.email||'(no email)':'—')));
+  const si=h('input',{type:'text',placeholder:'Subject',style:'width:100%;margin-bottom:10px'});
+  const bi=h('textarea',{placeholder:'Write your email...',style:'width:100%;min-height:240px'});
+  body.appendChild(si);body.appendChild(bi);m.appendChild(body);
+  const foot=h('div',{cls:'modal-footer'});
+  foot.appendChild(h('button',{cls:'btn',onclick:()=>{S.compose=false;render();}},'Cancel'));
+  foot.appendChild(h('button',{cls:'btn btn-primary',onclick:()=>{
+    if(!si.value.trim()||!b){alert('Subject required.');return;}
+    b.emails=b.emails||[];b.emails.push({id:Date.now(),direction:'sent',subject:si.value,date:new Date().toISOString().slice(0,10),body:bi.value});
+    b.logs=b.logs||[];b.logs.push({id:Date.now(),type:'email',date:new Date().toISOString().slice(0,10),text:`Sent: "${si.value}"`,by:'You'});
+    save(data);toast('Email logged to '+b.name+'!');S.compose=false;render();
+  }},'📤 Send & Log'));
+  m.appendChild(foot);ov.appendChild(m);ov.onclick=e=>{if(e.target===ov){S.compose=false;render();}};return ov;
+}
+
+function modalCampaign(){
+  const camp=S.campDraft;
+  const ov=h('div',{cls:'modal-overlay'});const m=h('div',{cls:'modal'});
+  m.appendChild(h('div',{cls:'modal-header'},h('h3',{},'📧 New Email Campaign'),h('button',{cls:'btn btn-sm',onclick:()=>{S.campaign=false;render();}},'✕')));
+  const body=h('div',{cls:'modal-body'});
+  const nG=h('div',{cls:'form-group',style:'margin-bottom:12px'});nG.appendChild(h('label',{},'Campaign Name'));
+  const ni=h('input',{type:'text',placeholder:'e.g. Q3 ICHRA Awareness'});ni.value=camp.name;ni.oninput=e=>camp.name=e.target.value;nG.appendChild(ni);
+  const sG=h('div',{cls:'form-group',style:'margin-bottom:12px'});sG.appendChild(h('label',{},'Subject Line'));
+  const si=h('input',{type:'text',placeholder:'Email subject'});si.value=camp.subject;si.oninput=e=>camp.subject=e.target.value;sG.appendChild(si);
+  const rG=h('div',{cls:'form-group',style:'margin-bottom:12px'});rG.appendChild(h('label',{},`Recipients — brokers with email (${data.brokers.filter(b=>b.email&&b.status!=='cold').length} available)`));
+  const rw=h('div',{style:'max-height:180px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius);padding:8px'});
+  data.brokers.filter(b=>b.email&&b.status!=='cold').forEach(b=>{
+    const row=h('label',{style:'display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 0;font-size:13px'});
+    const cb=h('input',{type:'checkbox'});cb.checked=camp.recipients.includes(b.email);
+    cb.onchange=e=>{if(e.target.checked){if(!camp.recipients.includes(b.email))camp.recipients.push(b.email);}else{camp.recipients=camp.recipients.filter(r=>r!==b.email);}};
+    row.appendChild(cb);row.appendChild(document.createTextNode(b.name+' · '+b.agency));rw.appendChild(row);
+  });
+  const selectAll=h('button',{cls:'btn btn-sm',style:'margin-bottom:8px',onclick:()=>{data.brokers.filter(b=>b.email&&b.status!=='cold').forEach(b=>{if(!camp.recipients.includes(b.email))camp.recipients.push(b.email);});render();}},'Select All');
+  rG.appendChild(selectAll);rG.appendChild(rw);
+  const bG=h('div',{cls:'form-group'});bG.appendChild(h('label',{},'Email Body (use {name} for personalization)'));
+  const bi=h('textarea',{placeholder:'Hi {name},\n\nI wanted to reach out about ICHRA...',style:'min-height:180px'});bi.value=camp.body;bi.oninput=e=>camp.body=e.target.value;bG.appendChild(bi);
+  body.appendChild(nG);body.appendChild(sG);body.appendChild(rG);body.appendChild(bG);m.appendChild(body);
+  const foot=h('div',{cls:'modal-footer'});
+  foot.appendChild(h('button',{cls:'btn',onclick:()=>{S.campaign=false;render();}},'Cancel'));
+  foot.appendChild(h('button',{cls:'btn',onclick:()=>{
+    if(!camp.name.trim()){alert('Name required.');return;}
+    data.campaigns.push({id:data.nextCampId++,...camp,status:'draft',date:''});save(data);S.campaign=false;toast('Draft saved!');render();
+  }},'💾 Save Draft'));
+  foot.appendChild(h('button',{cls:'btn btn-primary',onclick:()=>{
+    if(!camp.name.trim()||!camp.subject.trim()){alert('Name and subject required.');return;}
+    if(!camp.recipients.length){alert('Select at least one recipient.');return;}
+    data.campaigns.push({id:data.nextCampId++,...camp,status:'sent',date:new Date().toISOString().slice(0,10)});
+    save(data);S.campaign=false;toast('Campaign sent to '+camp.recipients.length+' brokers!');render();
+  }},'📤 Send Now'));
+  m.appendChild(foot);ov.appendChild(m);ov.onclick=e=>{if(e.target===ov){S.campaign=false;render();}};return ov;
+}
+
+function exportCSV(){
+  const hdr=['Name','Title','Agency','Email','Mobile','Direct','State','Status','LinkedIn','Address','Outreach Date','Follow-up','Notes','Support Team','Activities','Emails Logged'];
+  const rows=data.brokers.map(b=>[b.name,b.title,b.agency,b.email,b.mobile,b.direct||'',b.state,b.status,b.linkedin||'',b.address||'',b.startDate||'',b.followUp||'',(b.notes||'').replace(/,/g,';'),(b.support||[]).map(s=>s.name+'('+s.role+')').join('|'),(b.logs||[]).length,(b.emails||[]).length]);
+  const csv=[hdr,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ICHRA_Brokers_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  toast('CSV exported!');
+}
+
+render();
+</script>
+</body>
+</html>
